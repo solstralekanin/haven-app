@@ -4,7 +4,7 @@ import {
   getBoardCards,
   getBoardLists,
   type TrelloCard,
-  type TrelloList
+  type TrelloList,
 } from "../services/trello";
 
 // State
@@ -31,15 +31,15 @@ const labelColors: Record<string, string> = {
 
 // Get list name by ID
 const getListName = (listId: string) => {
-  return lists.value.find(list => list.id === listId)?.name || 'Unknown';
+  return lists.value.find((list) => list.id === listId)?.name || "Unknown";
 };
 
 // Authentication
 const authenticateWithTrello = () => {
   // Use nullish coalescing for fallback
-  const defaultToken = import.meta.env.VITE_TRELLO_TOKEN ?? '';
+  const defaultToken = import.meta.env.VITE_TRELLO_TOKEN ?? "";
   const userToken = prompt("Enter your Trello token:", defaultToken);
-  
+
   if (userToken) {
     token.value = userToken;
     authenticated.value = true;
@@ -51,16 +51,16 @@ const authenticateWithTrello = () => {
 // Load all board data
 const loadBoardData = async () => {
   if (!boardId.value.trim()) return;
-  
+
   try {
     loading.value = true;
-    
+
     // Fetch lists and cards in parallel
     const [listsResponse, cardsResponse] = await Promise.all([
       getBoardLists(boardId.value.trim(), token.value),
-      getBoardCards(boardId.value.trim(), token.value)
+      getBoardCards(boardId.value.trim(), token.value),
     ]);
-    
+
     lists.value = listsResponse;
     cards.value = cardsResponse;
   } catch (error) {
@@ -111,7 +111,9 @@ const formatDate = (dateString: string) => {
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center p-8">
-        <div class="inline-block w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-2"></div>
+        <div
+          class="inline-block w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-2"
+        ></div>
         <p class="text-gray-600">Loading cards...</p>
       </div>
 
@@ -121,12 +123,17 @@ const formatDate = (dateString: string) => {
           v-for="card in cards"
           :key="card.id"
           class="bg-white rounded-lg shadow-sm p-4 border-l-4"
-          :style="{ borderLeftColor: labelColors[card.labels[0]?.color] || '#ddd' }"
+          :style="{
+            borderLeftColor: labelColors[card.labels[0]?.color] || '#ddd',
+          }"
         >
           <div class="flex justify-between items-start">
             <div>
               <h3 class="font-medium text-gray-800">{{ card.name }}</h3>
-              <p v-if="card.desc" class="text-gray-600 text-sm mt-1 line-clamp-2">
+              <p
+                v-if="card.desc"
+                class="text-gray-600 text-sm mt-1 line-clamp-2"
+              >
                 {{ card.desc }}
               </p>
             </div>
@@ -138,7 +145,7 @@ const formatDate = (dateString: string) => {
               View
             </a>
           </div>
-          
+
           <div class="mt-3 flex justify-between items-center text-xs">
             <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded">
               {{ getListName(card.idList) }}

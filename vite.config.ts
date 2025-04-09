@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   define: {
-    'process.env': {},
-    'import.meta.env': JSON.stringify(process.env)
-  }
+    "process.env": {},
+    "import.meta.env": JSON.stringify(process.env),
+  },
 });

@@ -28,7 +28,7 @@ export interface TrelloList {
 
 export const getBoardCards = async (
   boardId: string,
-  token: string
+  token: string,
 ): Promise<TrelloCard[]> => {
   const response = await axios.get(`${BASE_URL}/boards/${boardId}/cards`, {
     params: {
@@ -36,7 +36,7 @@ export const getBoardCards = async (
       token,
       fields: "name,desc,url,dateLastActivity,idList,idMembers,labels",
       attachments: "false",
-      checklists: "none"
+      checklists: "none",
     },
   });
   return response.data;
@@ -44,14 +44,14 @@ export const getBoardCards = async (
 
 export const getBoardLists = async (
   boardId: string,
-  token: string
+  token: string,
 ): Promise<TrelloList[]> => {
   const response = await axios.get(`${BASE_URL}/boards/${boardId}/lists`, {
     params: {
       key: API_KEY,
       token,
       fields: "name,closed,idBoard,pos",
-      filter: "open" // Only get open lists
+      filter: "open", // Only get open lists
     },
   });
   // Sort lists by their position (Trello's native ordering)
@@ -60,14 +60,14 @@ export const getBoardLists = async (
 
 export const getListCards = async (
   listId: string,
-  token: string
+  token: string,
 ): Promise<TrelloCard[]> => {
   const response = await axios.get(`${BASE_URL}/lists/${listId}/cards`, {
     params: {
       key: API_KEY,
       token,
       fields: "name,desc,url,dateLastActivity,idList,idMembers,labels",
-      attachments: "false"
+      attachments: "false",
     },
   });
   return response.data;
@@ -80,13 +80,13 @@ export const getToken = (): string => {
 // Optional: Get board name for display purposes
 export const getBoardName = async (
   boardId: string,
-  token: string
+  token: string,
 ): Promise<string> => {
   const response = await axios.get(`${BASE_URL}/boards/${boardId}`, {
     params: {
       key: API_KEY,
       token,
-      fields: "name"
+      fields: "name",
     },
   });
   return response.data.name;
