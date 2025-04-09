@@ -128,12 +128,19 @@ const refreshData = async () => {
 };
 
 const authenticateWithTrello = () => {
-  const userToken = prompt("Enter your Trello token:");
-  if (userToken) {
-    token.value = userToken;
-    authenticated.value = true;
-    localStorage.setItem("trello_token", userToken);
-    loadBoardData();
+  // For production, redirect to Trello auth then back to your app
+  if (import.meta.env.PROD) {
+    const authUrl = `https://trello.com/1/authorize?expiration=never&scope=read&response_type=token&name=MyApp&key=${import.meta.env.VITE_TRELLO_API_KEY}&return_url=${window.location.origin}`;
+    window.location.href = authUrl;
+  } else {
+    // Local development fallback
+    const userToken = prompt("Enter your Trello token:");
+    if (userToken) {
+      token.value = userToken;
+      authenticated.value = true;
+      localStorage.setItem("trello_token", userToken);
+      loadBoardData();
+    }
   }
 };
 
@@ -148,15 +155,23 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-// Check for existing token on mount
+// Check for existing token on load
 onMounted(() => {
-  const storedToken = localStorage.getItem("trello_token");
+  // Try to get token from both localStorage AND URL hash
+  const storedToken =
+    localStorage.getItem("trello_token") || window.location.hash.substring(1);
+
   if (storedToken) {
     token.value = storedToken;
     authenticated.value = true;
     loadBoardData();
+
+    // If token came from URL hash, store it properly
+    if (window.location.hash) {
+      localStorage.setItem("trello_token", storedToken);
+      window.location.hash = ""; // Clean up URL
+    }
   }
-  document.addEventListener("click", handleClickOutside);
 });
 
 // Cleanup
