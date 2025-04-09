@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import beachImage from "../assets/beachshore.jpg";
 </script>
 
