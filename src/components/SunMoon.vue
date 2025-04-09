@@ -1,5 +1,5 @@
 <script setup lang="ts">
- import { useTheme } from "../composables/useTheme";
+ import { useTheme } from "../services/useTheme";
  import { MoonIcon, SunIcon } from "@heroicons/vue/24/outline";
  
  const { theme, toggleTheme } = useTheme();
