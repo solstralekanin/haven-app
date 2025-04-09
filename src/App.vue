@@ -1,20 +1,13 @@
-<template>
-  <TrelloViewer />
-</template>
-
 <script setup lang="ts">
-import TrelloViewer from "./components/TrelloViewer.vue";
+import NavBar from "./components/NavBar.vue";
 </script>
 
-<style>
-body {
-  margin: 0;
-  background-color: #f5f6f8;
-  color: #172b4d;
-}
-
-#app {
-  min-height: 100vh;
-  padding: 20px;
-}
-</style>
+<template>
+  <div class="h-full">
+    <div
+      class="min-h-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"
+    >
+      <NavBar />
+    </div>
+  </div>
+</template>

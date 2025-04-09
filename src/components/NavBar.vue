@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRoute } from "vue-router";
-import { useTheme } from "../composables/useTheme";
+import { useTheme } from "../services/useTheme";
 import {
   Dialog,
   DialogPanel,

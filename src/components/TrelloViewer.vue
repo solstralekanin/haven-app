@@ -4,7 +4,7 @@ import {
   getBoardCards,
   getBoardLists,
   type TrelloCard,
-  type TrelloList
+  type TrelloList,
 } from "../services/trello";
 
 // State
@@ -38,8 +38,8 @@ const labelColors: Record<string, string> = {
 // Computed properties
 const uniqueLabels = computed(() => {
   const labels = new Set<string>();
-  cards.value.forEach(card => {
-    card.labels.forEach(label => {
+  cards.value.forEach((card) => {
+    card.labels.forEach((label) => {
       labels.add(label.name || label.color);
     });
   });
@@ -47,24 +47,28 @@ const uniqueLabels = computed(() => {
 });
 
 const filteredCards = computed(() => {
-  return cards.value.filter(card => {
-    const matchesSearch = searchQuery.value === "" || 
-      card.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
+  return cards.value.filter((card) => {
+    const matchesSearch =
+      searchQuery.value === "" ||
+      card.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       card.desc?.toLowerCase().includes(searchQuery.value.toLowerCase());
-    
-    const matchesStatus = selectedStatuses.value.length === 0 || 
+
+    const matchesStatus =
+      selectedStatuses.value.length === 0 ||
       selectedStatuses.value.includes(card.idList);
-    
-    const matchesLabel = selectedLabels.value.length === 0 || 
-      card.labels.some(label => 
-        selectedLabels.value.includes(label.name || label.color));
-    
+
+    const matchesLabel =
+      selectedLabels.value.length === 0 ||
+      card.labels.some((label) =>
+        selectedLabels.value.includes(label.name || label.color),
+      );
+
     return matchesSearch && matchesStatus && matchesLabel;
   });
 });
 
 const getListName = (listId: string) => {
-  return lists.value.find(list => list.id === listId)?.name || 'Unknown';
+  return lists.value.find((list) => list.id === listId)?.name || "Unknown";
 };
 
 // Filter management
@@ -87,11 +91,11 @@ const toggleLabelFilter = (label: string) => {
 };
 
 const removeStatusFilter = (listId: string) => {
-  selectedStatuses.value = selectedStatuses.value.filter(id => id !== listId);
+  selectedStatuses.value = selectedStatuses.value.filter((id) => id !== listId);
 };
 
 const removeLabelFilter = (label: string) => {
-  selectedLabels.value = selectedLabels.value.filter(l => l !== label);
+  selectedLabels.value = selectedLabels.value.filter((l) => l !== label);
 };
 
 const clearAllFilters = () => {
@@ -106,7 +110,7 @@ const loadBoardData = async () => {
     loading.value = true;
     const [listsResponse, cardsResponse] = await Promise.all([
       getBoardLists(boardId.value, token.value),
-      getBoardCards(boardId.value, token.value)
+      getBoardCards(boardId.value, token.value),
     ]);
     lists.value = listsResponse;
     cards.value = cardsResponse;
@@ -136,10 +140,10 @@ const authenticateWithTrello = () => {
 // Close dropdowns when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
-  if (!target.closest('.status-dropdown')) {
+  if (!target.closest(".status-dropdown")) {
     showStatusDropdown.value = false;
   }
-  if (!target.closest('.label-dropdown')) {
+  if (!target.closest(".label-dropdown")) {
     showLabelDropdown.value = false;
   }
 };
@@ -152,12 +156,12 @@ onMounted(() => {
     authenticated.value = true;
     loadBoardData();
   }
-  document.addEventListener('click', handleClickOutside);
+  document.addEventListener("click", handleClickOutside);
 });
 
 // Cleanup
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener("click", handleClickOutside);
 });
 </script>
 
@@ -178,15 +182,28 @@ onUnmounted(() => {
     <!-- Main Content -->
     <div v-else>
       <!-- Refresh and Search -->
-      <div class="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-end">
+      <div
+        class="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-end"
+      >
         <!-- Refresh Button -->
         <div class="flex items-center gap-2">
           <button
             @click="refreshData"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Refresh
           </button>
@@ -197,7 +214,9 @@ onUnmounted(() => {
 
         <!-- Search -->
         <div class="flex-1 min-w-[200px]">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Search Cards</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Search Cards</label
+          >
           <input
             v-model="searchQuery"
             placeholder="Type to search..."
@@ -207,40 +226,62 @@ onUnmounted(() => {
       </div>
 
       <!-- Active Filters Bar -->
-      <div v-if="searchQuery || selectedStatuses.length || selectedLabels.length" 
-           class="mb-4 flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg">
+      <div
+        v-if="searchQuery || selectedStatuses.length || selectedLabels.length"
+        class="mb-4 flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg"
+      >
         <span class="text-sm font-medium text-gray-700">Filters:</span>
-        
+
         <!-- Search Filter Badge -->
-        <div v-if="searchQuery" class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border">
+        <div
+          v-if="searchQuery"
+          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
+        >
           <span class="mr-1">Search: "{{ searchQuery }}"</span>
-          <button @click="searchQuery = ''" class="text-gray-500 hover:text-gray-700">
+          <button
+            @click="searchQuery = ''"
+            class="text-gray-500 hover:text-gray-700"
+          >
             &times;
           </button>
         </div>
-        
+
         <!-- Status Filter Badges -->
-        <div v-for="statusId in selectedStatuses" :key="statusId" 
-             class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border">
+        <div
+          v-for="statusId in selectedStatuses"
+          :key="statusId"
+          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
+        >
           <span class="mr-1">Status: {{ getListName(statusId) }}</span>
-          <button @click="removeStatusFilter(statusId)" class="text-gray-500 hover:text-gray-700">
+          <button
+            @click="removeStatusFilter(statusId)"
+            class="text-gray-500 hover:text-gray-700"
+          >
             &times;
           </button>
         </div>
-        
+
         <!-- Label Filter Badges -->
-        <div v-for="label in selectedLabels" :key="label" 
-             class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
-             :style="{ borderLeftColor: labelColors[label] || '#ddd' }">
+        <div
+          v-for="label in selectedLabels"
+          :key="label"
+          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
+          :style="{ borderLeftColor: labelColors[label] || '#ddd' }"
+        >
           <span class="mr-1">Label: {{ label }}</span>
-          <button @click="removeLabelFilter(label)" class="text-gray-500 hover:text-gray-700">
+          <button
+            @click="removeLabelFilter(label)"
+            class="text-gray-500 hover:text-gray-700"
+          >
             &times;
           </button>
         </div>
-        
+
         <!-- Clear All Button -->
-        <button @click="clearAllFilters" 
-                class="ml-2 text-sm text-blue-600 hover:text-blue-800 hover:underline">
+        <button
+          @click="clearAllFilters"
+          class="ml-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+        >
           Clear All
         </button>
       </div>
@@ -249,14 +290,29 @@ onUnmounted(() => {
       <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Status Dropdown -->
         <div class="status-dropdown relative">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Filter by Status</label
+          >
           <button
             @click.stop="showStatusDropdown = !showStatusDropdown"
             class="w-full p-2 border border-gray-300 rounded-md text-left flex justify-between items-center"
           >
-            <span>{{ selectedStatuses.length ? `${selectedStatuses.length} selected` : 'Select statuses...' }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            <span>{{
+              selectedStatuses.length
+                ? `${selectedStatuses.length} selected`
+                : "Select statuses..."
+            }}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-gray-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
             </svg>
           </button>
           <div
@@ -272,26 +328,53 @@ onUnmounted(() => {
             >
               <div class="flex items-center">
                 <span class="block truncate">{{ list.name }}</span>
-                <span v-if="selectedStatuses.includes(list.id)" class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                <span
+                  v-if="selectedStatuses.includes(list.id)"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
                   </svg>
                 </span>
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- Label Dropdown -->
         <div class="label-dropdown relative">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Label</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Filter by Label</label
+          >
           <button
             @click.stop="showLabelDropdown = !showLabelDropdown"
             class="w-full p-2 border border-gray-300 rounded-md text-left flex justify-between items-center"
           >
-            <span>{{ selectedLabels.length ? `${selectedLabels.length} selected` : 'Select labels...' }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            <span>{{
+              selectedLabels.length
+                ? `${selectedLabels.length} selected`
+                : "Select labels..."
+            }}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-gray-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
             </svg>
           </button>
           <div
@@ -307,9 +390,21 @@ onUnmounted(() => {
             >
               <div class="flex items-center">
                 <span class="block truncate">{{ label }}</span>
-                <span v-if="selectedLabels.includes(label)" class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                <span
+                  v-if="selectedLabels.includes(label)"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
                   </svg>
                 </span>
               </div>
@@ -320,7 +415,9 @@ onUnmounted(() => {
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center p-8">
-        <div class="inline-block w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-2"></div>
+        <div
+          class="inline-block w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-2"
+        ></div>
         <p class="text-gray-600">Loading cards...</p>
       </div>
 
@@ -330,12 +427,19 @@ onUnmounted(() => {
           v-for="card in filteredCards"
           :key="card.id"
           class="bg-white rounded-lg shadow-sm p-4 border-l-4 hover:shadow-md transition-all duration-200"
-          :style="{ borderLeftColor: card.labels[0] ? labelColors[card.labels[0].color] || '#ddd' : '#ddd' }"
+          :style="{
+            borderLeftColor: card.labels[0]
+              ? labelColors[card.labels[0].color] || '#ddd'
+              : '#ddd',
+          }"
         >
           <div class="flex justify-between items-start">
             <div>
               <h3 class="font-medium text-gray-800">{{ card.name }}</h3>
-              <p v-if="card.desc" class="text-gray-600 text-sm mt-1 line-clamp-3">
+              <p
+                v-if="card.desc"
+                class="text-gray-600 text-sm mt-1 line-clamp-3"
+              >
                 {{ card.desc }}
               </p>
             </div>
@@ -348,24 +452,24 @@ onUnmounted(() => {
               ↗
             </a>
           </div>
-          
+
           <!-- Labels -->
           <div v-if="card.labels.length" class="mt-2 flex flex-wrap gap-1">
             <span
               v-for="label in card.labels"
               :key="label.id"
               class="text-xs px-2 py-1 rounded-full"
-              :style="{ 
+              :style="{
                 backgroundColor: `${labelColors[label.color]}20`,
                 color: labelColors[label.color],
-                border: `1px solid ${labelColors[label.color]}`
+                border: `1px solid ${labelColors[label.color]}`,
               }"
               :title="label.name || label.color"
             >
               {{ label.name || label.color }}
             </span>
           </div>
-          
+
           <!-- Status -->
           <div class="mt-3">
             <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
@@ -376,8 +480,8 @@ onUnmounted(() => {
       </div>
 
       <!-- Empty State -->
-      <div 
-        v-if="!loading && filteredCards.length === 0" 
+      <div
+        v-if="!loading && filteredCards.length === 0"
         class="text-center text-gray-500 py-8 bg-gray-50 rounded-lg"
       >
         <p v-if="cards.length === 0">No cards found in this board.</p>
