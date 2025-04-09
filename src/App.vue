@@ -1,18 +1,20 @@
-<!-- App.vue -->
-<script setup lang="ts">
-import NavBar from "./components/NavBar.vue";
-import { useTheme } from "./composables/useTheme";
+<template>
+  <TrelloViewer />
+</template>
 
-const { theme } = useTheme();
+<script setup lang="ts">
+import TrelloViewer from "./components/TrelloViewer.vue";
 </script>
 
-<template>
-  <div class="h-full" :class="theme">
-    <div
-      class="min-h-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"
-    >
-      <NavBar />
-      <router-view />
-    </div>
-  </div>
-</template>
+<style>
+body {
+  margin: 0;
+  background-color: #f5f6f8;
+  color: #172b4d;
+}
+
+#app {
+  min-height: 100vh;
+  padding: 20px;
+}
+</style>
