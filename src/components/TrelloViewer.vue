@@ -15,7 +15,8 @@ const loading = ref(false);
 const cards = ref<TrelloCard[]>([]);
 const lists = ref<TrelloList[]>([]);
 const allMembers = ref<TrelloMember[]>([]);
-const searchQuery = ref("");
+const searchBadges = ref<string[]>([]);
+const currentSearchInput = ref("");
 const selectedStatuses = ref<string[]>([]);
 const selectedLabels = ref<string[]>([]);
 const selectedMembers = ref<string[]>([]);
@@ -58,9 +59,12 @@ const uniqueMembers = computed(() => {
 const filteredCards = computed(() => {
   return cards.value.filter((card) => {
     const matchesSearch =
-      searchQuery.value === "" ||
-      card.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      card.desc?.toLowerCase().includes(searchQuery.value.toLowerCase());
+      searchBadges.value.length === 0 ||
+      searchBadges.value.some(
+        (term) =>
+          card.name.toLowerCase().includes(term.toLowerCase()) ||
+          card.desc?.toLowerCase().includes(term.toLowerCase()),
+      );
 
     const matchesStatus =
       selectedStatuses.value.length === 0 ||
@@ -87,6 +91,21 @@ const filteredCards = computed(() => {
 
 const getListName = (listId: string) => {
   return lists.value.find((list) => list.id === listId)?.name || "Unknown";
+};
+
+// Search methods
+const addSearchBadge = () => {
+  if (
+    currentSearchInput.value.trim() &&
+    !searchBadges.value.includes(currentSearchInput.value.trim())
+  ) {
+    searchBadges.value.push(currentSearchInput.value.trim());
+    currentSearchInput.value = "";
+  }
+};
+
+const removeSearchBadge = (badge: string) => {
+  searchBadges.value = searchBadges.value.filter((b) => b !== badge);
 };
 
 // Filter management
@@ -130,7 +149,8 @@ const removeMemberFilter = (memberId: string) => {
 };
 
 const clearAllFilters = () => {
-  searchQuery.value = "";
+  searchBadges.value = [];
+  currentSearchInput.value = "";
   selectedStatuses.value = [];
   selectedLabels.value = [];
   selectedMembers.value = [];
@@ -249,131 +269,157 @@ onUnmounted(() => {
           </span>
         </div>
 
-        <!-- Search -->
+        <!-- Search Input -->
         <div class="flex-1 min-w-[200px]">
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Search Cards</label
           >
-          <input
-            v-model="searchQuery"
-            placeholder="Type to search..."
-            class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          />
+          <div class="relative">
+            <input
+              v-model="currentSearchInput"
+              @keyup.enter="addSearchBadge"
+              placeholder="Type and press Enter to add filter..."
+              class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button
+              v-if="currentSearchInput"
+              @click="addSearchBadge"
+              class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Active Filters Bar -->
+      <!-- Unified Filters Bar -->
       <div
         v-if="
-          searchQuery ||
+          searchBadges.length ||
           selectedStatuses.length ||
           selectedLabels.length ||
           selectedMembers.length
         "
-        class="mb-4 flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg"
+        class="mb-6 bg-gray-50 p-4 rounded-lg"
       >
-        <span class="text-sm font-medium text-gray-700">Filters:</span>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-sm font-medium text-gray-700">Filters:</span>
 
-        <!-- Search Filter Badge -->
-        <div
-          v-if="searchQuery"
-          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
-        >
-          <span class="mr-1">Search: "{{ searchQuery }}"</span>
-          <button
-            @click="searchQuery = ''"
-            class="text-gray-500 hover:text-gray-700"
+          <!-- Search Badges -->
+          <div
+            v-for="(badge, index) in searchBadges"
+            :key="`search-${index}`"
+            class="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm"
           >
-            &times;
-          </button>
-        </div>
-
-        <!-- Status Filter Badges -->
-        <div
-          v-for="statusId in selectedStatuses"
-          :key="statusId"
-          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
-        >
-          <span class="mr-1">Status: {{ getListName(statusId) }}</span>
-          <button
-            @click="removeStatusFilter(statusId)"
-            class="text-gray-500 hover:text-gray-700"
-          >
-            &times;
-          </button>
-        </div>
-
-        <!-- Label Filter Badges -->
-        <div
-          v-for="label in selectedLabels"
-          :key="label"
-          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
-          :style="{ borderLeftColor: labelColors[label] || '#ddd' }"
-        >
-          <span class="mr-1">Label: {{ label }}</span>
-          <button
-            @click="removeLabelFilter(label)"
-            class="text-gray-500 hover:text-gray-700"
-          >
-            &times;
-          </button>
-        </div>
-
-        <!-- Member Filter Badges -->
-        <div
-          v-for="memberId in selectedMembers"
-          :key="memberId"
-          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
-        >
-          <div class="flex items-center gap-1">
-            <div
-              v-if="allMembers.find((m) => m.id === memberId)?.avatarUrl"
-              class="w-4 h-4 rounded-full overflow-hidden"
+            <span>Search: "{{ badge }}"</span>
+            <button
+              @click="removeSearchBadge(badge)"
+              class="ml-1 text-blue-600 hover:text-blue-800"
             >
-              <img
-                :src="
-                  allMembers.find((m) => m.id === memberId)?.avatarUrl +
-                  '/30.png'
-                "
-                :alt="allMembers.find((m) => m.id === memberId)?.fullName"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div
-              v-else
-              class="w-4 h-4 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600"
-            >
-              {{
-                allMembers.find((m) => m.id === memberId)?.initials ||
-                (
-                  allMembers.find((m) => m.id === memberId)?.fullName || ""
-                ).substring(0, 2)
-              }}
-            </div>
-            <span class="mr-1">
-              {{
-                allMembers.find((m) => m.id === memberId)?.fullName || "Unknown"
-              }}
-            </span>
+              &times;
+            </button>
           </div>
-          <button
-            @click="removeMemberFilter(memberId)"
-            class="text-gray-500 hover:text-gray-700"
+
+          <!-- Status Filters -->
+          <div
+            v-for="statusId in selectedStatuses"
+            :key="`status-${statusId}`"
+            class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
           >
-            &times;
+            <span>Status: {{ getListName(statusId) }}</span>
+            <button
+              @click="removeStatusFilter(statusId)"
+              class="ml-1 text-gray-500 hover:text-gray-700"
+            >
+              &times;
+            </button>
+          </div>
+
+          <!-- Label Filters -->
+          <div
+            v-for="label in selectedLabels"
+            :key="`label-${label}`"
+            class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
+            :style="{ borderLeftColor: labelColors[label] || '#ddd' }"
+          >
+            <span>Label: {{ label }}</span>
+            <button
+              @click="removeLabelFilter(label)"
+              class="ml-1 text-gray-500 hover:text-gray-700"
+            >
+              &times;
+            </button>
+          </div>
+
+          <!-- Member Filters -->
+          <div
+            v-for="memberId in selectedMembers"
+            :key="`member-${memberId}`"
+            class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
+          >
+            <div class="flex items-center gap-1">
+              <div
+                v-if="allMembers.find((m) => m.id === memberId)?.avatarUrl"
+                class="w-4 h-4 rounded-full overflow-hidden"
+              >
+                <img
+                  :src="
+                    allMembers.find((m) => m.id === memberId)?.avatarUrl +
+                    '/30.png'
+                  "
+                  :alt="allMembers.find((m) => m.id === memberId)?.fullName"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div
+                v-else
+                class="w-4 h-4 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600"
+              >
+                {{
+                  allMembers.find((m) => m.id === memberId)?.initials ||
+                  (
+                    allMembers.find((m) => m.id === memberId)?.fullName || ""
+                  ).substring(0, 2)
+                }}
+              </div>
+              <span
+                >Member:
+                {{
+                  allMembers.find((m) => m.id === memberId)?.fullName ||
+                  "Unknown"
+                }}</span
+              >
+            </div>
+            <button
+              @click="removeMemberFilter(memberId)"
+              class="ml-1 text-gray-500 hover:text-gray-700"
+            >
+              &times;
+            </button>
+          </div>
+
+          <!-- Clear All Button -->
+          <button
+            @click="clearAllFilters"
+            class="ml-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+          >
+            Clear All
           </button>
         </div>
-
-        <!-- Clear All Button -->
-        <button
-          @click="clearAllFilters"
-          class="ml-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-        >
-          Clear All
-        </button>
       </div>
 
-      <!-- Dropdown Filters -->
+      <!-- Filter Dropdowns -->
       <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Status Dropdown -->
         <div class="status-dropdown relative">
@@ -687,3 +733,7 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Add any custom styles here if needed */
+</style>
