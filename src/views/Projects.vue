@@ -3,7 +3,7 @@
 <template>
   <div class="py-10 px-4 sm:px-6 lg:px-8">
     <div class="flex text-center justify-center">
-      <h1>projects</h1>
+      <h1>incoming</h1>
     </div>
   </div>
 </template>

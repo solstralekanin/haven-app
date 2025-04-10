@@ -45,13 +45,6 @@ const userNavigation = [
 
 // Active route check
 const isActive = (href: string) => route.path === href;
-
-// Debug theme - remove in production
-const debugTheme = () => {
-  console.log("Current theme:", theme.value);
-  console.log("HTML classes:", document.documentElement.classList);
-  console.log("LocalStorage theme:", localStorage.getItem("theme"));
-};
 </script>
 
 <template>
