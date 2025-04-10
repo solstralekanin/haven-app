@@ -3,8 +3,10 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   getBoardCards,
   getBoardLists,
+  getBoardMembers,
   type TrelloCard,
   type TrelloList,
+  type TrelloMember,
 } from "../services/trello";
 
 // State
@@ -12,14 +14,17 @@ const authenticated = ref(false);
 const loading = ref(false);
 const cards = ref<TrelloCard[]>([]);
 const lists = ref<TrelloList[]>([]);
+const allMembers = ref<TrelloMember[]>([]);
 const searchQuery = ref("");
 const selectedStatuses = ref<string[]>([]);
 const selectedLabels = ref<string[]>([]);
+const selectedMembers = ref<string[]>([]);
 const boardId = ref("rW0gJRuy");
 const token = ref("");
 const lastUpdated = ref<string>("");
 const showStatusDropdown = ref(false);
 const showLabelDropdown = ref(false);
+const showMemberDropdown = ref(false);
 
 // Colors for labels
 const labelColors: Record<string, string> = {
@@ -46,6 +51,10 @@ const uniqueLabels = computed(() => {
   return Array.from(labels);
 });
 
+const uniqueMembers = computed(() => {
+  return allMembers.value;
+});
+
 const filteredCards = computed(() => {
   return cards.value.filter((card) => {
     const matchesSearch =
@@ -63,7 +72,16 @@ const filteredCards = computed(() => {
         selectedLabels.value.includes(label.name || label.color),
       );
 
-    return matchesSearch && matchesStatus && matchesLabel;
+    const matchesMember =
+      selectedMembers.value.length === 0 ||
+      (card.idMembers &&
+        card.idMembers.some((id) => selectedMembers.value.includes(id))) ||
+      (card.members &&
+        card.members.some((member) =>
+          selectedMembers.value.includes(member.id),
+        ));
+
+    return matchesSearch && matchesStatus && matchesLabel && matchesMember;
   });
 });
 
@@ -90,6 +108,15 @@ const toggleLabelFilter = (label: string) => {
   }
 };
 
+const toggleMemberFilter = (memberId: string) => {
+  const index = selectedMembers.value.indexOf(memberId);
+  if (index === -1) {
+    selectedMembers.value.push(memberId);
+  } else {
+    selectedMembers.value.splice(index, 1);
+  }
+};
+
 const removeStatusFilter = (listId: string) => {
   selectedStatuses.value = selectedStatuses.value.filter((id) => id !== listId);
 };
@@ -98,22 +125,29 @@ const removeLabelFilter = (label: string) => {
   selectedLabels.value = selectedLabels.value.filter((l) => l !== label);
 };
 
+const removeMemberFilter = (memberId: string) => {
+  selectedMembers.value = selectedMembers.value.filter((id) => id !== memberId);
+};
+
 const clearAllFilters = () => {
   searchQuery.value = "";
   selectedStatuses.value = [];
   selectedLabels.value = [];
+  selectedMembers.value = [];
 };
 
 // Data loading
 const loadBoardData = async () => {
   try {
     loading.value = true;
-    const [listsResponse, cardsResponse] = await Promise.all([
+    const [listsResponse, cardsResponse, membersResponse] = await Promise.all([
       getBoardLists(boardId.value, token.value),
       getBoardCards(boardId.value, token.value),
+      getBoardMembers(boardId.value, token.value),
     ]);
     lists.value = listsResponse;
     cards.value = cardsResponse;
+    allMembers.value = membersResponse;
     lastUpdated.value = new Date().toLocaleString();
   } catch (error) {
     console.error("Error loading board data:", error);
@@ -145,6 +179,9 @@ const handleClickOutside = (event: MouseEvent) => {
   }
   if (!target.closest(".label-dropdown")) {
     showLabelDropdown.value = false;
+  }
+  if (!target.closest(".member-dropdown")) {
+    showMemberDropdown.value = false;
   }
 };
 
@@ -227,7 +264,12 @@ onUnmounted(() => {
 
       <!-- Active Filters Bar -->
       <div
-        v-if="searchQuery || selectedStatuses.length || selectedLabels.length"
+        v-if="
+          searchQuery ||
+          selectedStatuses.length ||
+          selectedLabels.length ||
+          selectedMembers.length
+        "
         class="mb-4 flex flex-wrap items-center gap-2 bg-gray-50 p-3 rounded-lg"
       >
         <span class="text-sm font-medium text-gray-700">Filters:</span>
@@ -277,6 +319,51 @@ onUnmounted(() => {
           </button>
         </div>
 
+        <!-- Member Filter Badges -->
+        <div
+          v-for="memberId in selectedMembers"
+          :key="memberId"
+          class="flex items-center bg-white rounded-full px-3 py-1 text-sm shadow-xs border"
+        >
+          <div class="flex items-center gap-1">
+            <div
+              v-if="allMembers.find((m) => m.id === memberId)?.avatarUrl"
+              class="w-4 h-4 rounded-full overflow-hidden"
+            >
+              <img
+                :src="
+                  allMembers.find((m) => m.id === memberId)?.avatarUrl +
+                  '/30.png'
+                "
+                :alt="allMembers.find((m) => m.id === memberId)?.fullName"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              v-else
+              class="w-4 h-4 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600"
+            >
+              {{
+                allMembers.find((m) => m.id === memberId)?.initials ||
+                (
+                  allMembers.find((m) => m.id === memberId)?.fullName || ""
+                ).substring(0, 2)
+              }}
+            </div>
+            <span class="mr-1">
+              {{
+                allMembers.find((m) => m.id === memberId)?.fullName || "Unknown"
+              }}
+            </span>
+          </div>
+          <button
+            @click="removeMemberFilter(memberId)"
+            class="text-gray-500 hover:text-gray-700"
+          >
+            &times;
+          </button>
+        </div>
+
         <!-- Clear All Button -->
         <button
           @click="clearAllFilters"
@@ -287,7 +374,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Dropdown Filters -->
-      <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Status Dropdown -->
         <div class="status-dropdown relative">
           <label class="block text-sm font-medium text-gray-700 mb-1"
@@ -411,6 +498,86 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+        <!-- Member Dropdown -->
+        <div class="member-dropdown relative">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Filter by Member</label
+          >
+          <button
+            @click.stop="showMemberDropdown = !showMemberDropdown"
+            class="w-full p-2 border border-gray-300 rounded-md text-left flex justify-between items-center"
+          >
+            <span>{{
+              selectedMembers.length
+                ? `${selectedMembers.length} selected`
+                : "Select members..."
+            }}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-gray-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <div
+            v-if="showMemberDropdown"
+            class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+          >
+            <div
+              v-for="member in uniqueMembers"
+              :key="member.id"
+              @click.stop="toggleMemberFilter(member.id)"
+              class="cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
+              :class="{ 'bg-blue-50': selectedMembers.includes(member.id) }"
+            >
+              <div class="flex items-center gap-2">
+                <div
+                  v-if="member.avatarUrl"
+                  class="w-6 h-6 rounded-full overflow-hidden"
+                >
+                  <img
+                    :src="member.avatarUrl + '/30.png'"
+                    :alt="member.fullName"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div
+                  v-else
+                  class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600"
+                >
+                  {{
+                    member.initials || (member.fullName || "").substring(0, 2)
+                  }}
+                </div>
+                <span class="block truncate">{{ member.fullName }}</span>
+                <span
+                  v-if="selectedMembers.includes(member.id)"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -468,6 +635,36 @@ onUnmounted(() => {
             >
               {{ label.name || label.color }}
             </span>
+          </div>
+
+          <!-- Members -->
+          <div
+            v-if="card.members && card.members.length"
+            class="mt-3 flex flex-wrap gap-2 items-center"
+          >
+            <div
+              v-for="member in card.members"
+              :key="member.id"
+              class="flex items-center"
+              :title="member.fullName"
+            >
+              <div
+                v-if="member.avatarUrl"
+                class="w-6 h-6 rounded-full overflow-hidden"
+              >
+                <img
+                  :src="member.avatarUrl + '/30.png'"
+                  :alt="member.fullName"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div
+                v-else
+                class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600"
+              >
+                {{ member.initials || (member.fullName || "").substring(0, 2) }}
+              </div>
+            </div>
           </div>
 
           <!-- Status -->
